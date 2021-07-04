@@ -23,7 +23,7 @@ class UserResponse {
     @Field(() => [FieldError], {nullable: true})
     errors?:  FieldError[]
 
-    @Field()
+    @Field(() => User, {nullable: true})
     user?: User
 }
 
@@ -55,10 +55,10 @@ export class UserResolver {
             return {
                 errors: [
                     {
-                    field: 'username',
-                    message: "user name doesn''t exist "
+                        field: 'username',
+                        message: "user name doesn''t exist "
                     }
-            ],
+                ],
             }
         };
         const valid = await argon2.verify(user.password, options.password);
@@ -66,8 +66,8 @@ export class UserResolver {
             return {
                 errors: [
                     {
-                    field: 'password',
-                    message: "incorrect password"
+                        field: 'password',
+                        message: "incorrect password"
                     }
                 ],
             };
