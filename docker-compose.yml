@@ -1,0 +1,15 @@
+version: "3"
+services:
+  database:
+    image: postgres:alpine
+    env_file: database.env
+    ports:
+      - 5432:5432
+    volumes:
+      - db-data:/var/lib/postgresql/data/
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+volumes:
+  db-data:

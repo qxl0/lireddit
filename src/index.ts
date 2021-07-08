@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { MikroORM } from "@mikro-orm/core";
-import { __prod__ } from "./constants";
+import { COOKIE_NAME, __prod__ } from "./constants";
 //import { Post } from "./entities/Post";
 import microConfig from "./mikro-orm.config";
 import express from 'express'
@@ -13,12 +13,15 @@ import { UserResolver } from "./resolvers/user";
 import redis from 'redis';
 import session from 'express-session';
 import connectRedis from "connect-redis";
-import { MyContext } from "./types";
-
+import cors from 'cors';
+import { sendEmail } from "./utils/sendEmail";
+import { User } from "./entities/User";
 
 
 const main = async () => {
+  //sendEmail("bob@bob.com", "hello from qiang");
   const orm = await MikroORM.init(microConfig);
+  //await orm.em.nativeDelete(User, {})
   await orm.getMigrator().up();
 
   const app = express()
@@ -26,9 +29,14 @@ const main = async () => {
   const RedisStore = connectRedis(session)
   const redisClient = redis.createClient()
 
+  app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true
+  }))
+
   app.use(
     session({
-      name: 'qid',
+      name: COOKIE_NAME,
       store: new RedisStore({ 
         client: redisClient,
         disableTouch: true
@@ -53,7 +61,10 @@ const main = async () => {
     context: ({req, res}) => ({em: orm.em, req, res})
   });
 
-  apolloServer.applyMiddleware({ app });
+  apolloServer.applyMiddleware({ 
+    app,
+    cors: false 
+  });
   // app.get('/', (_, res) => {
   //   res.send("hello from qiang")
   // })
