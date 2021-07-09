@@ -33,7 +33,7 @@ export class PostResolver {
         @Arg("input") input: PostInput,
         @Ctx() {req}: MyContext
     ): Promise<Post> {
-        console.log("create post: ", req.session.userId);
+        console.log("create post: ", req.session);
         if (!req.session.userId){
             throw new Error("not authenticated!")
         }
