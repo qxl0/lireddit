@@ -1,0 +1,4 @@
+ssr
+   browser -> nextjs -> graphql
+client
+   browser -> graphql

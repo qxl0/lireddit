@@ -6,6 +6,8 @@ import {
   Ctx,
   ObjectType,
   Query,
+  FieldResolver,
+  Root,
 } from "type-graphql";
 import { MyContext } from "../types";
 import { User } from "../entities/User";
@@ -35,9 +37,17 @@ class UserResponse {
 }
 
 
-@Resolver()
+@Resolver(User)
 export class UserResolver {
-    @Mutation(() => UserResponse)
+  @FieldResolver(() => String)
+  email(@Root() user: User, @Ctx() { req }: MyContext) {
+    if (req.session.userId === user.id) {
+      return user.email;
+    }
+    return "";
+  }
+
+  @Mutation(() => UserResponse)
   async changePassword(
     @Arg("token") token: string,
     @Arg("newPassword") newPassword: string,
@@ -129,7 +139,9 @@ export class UserResolver {
   @Query(() => User, { nullable: true })
   me(@Ctx() { req }: MyContext) {
     // you are not logged in
+    console.log("userId: ", req.session.userId);
     if (!req.session.userId) {
+      // destroy the session
       return null;
     }
 
@@ -190,7 +202,6 @@ export class UserResolver {
     @Arg("password") password: string,
     @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
-      console.log("what's in session:", req.session);
     const user = await User.findOne(
       usernameOrEmail.includes("@")
         ? { where: { email: usernameOrEmail } }
@@ -220,7 +231,6 @@ export class UserResolver {
 
     req.session.userId = user.id;
 
-    console.log("after log in: ", req.session)
     return {
       user,
     };

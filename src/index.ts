@@ -13,6 +13,10 @@ import cors from "cors";
 import { createConnection } from "typeorm";
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
+import path from 'path';
+import { Updoot } from "./entities/Updoot";
+import { createUserLoader } from "./utils/createUserLoader";
+
 
 const main = async () => {
   const conn = await createConnection({
@@ -22,9 +26,13 @@ const main = async () => {
     password: 'password',
     logging: true,
     synchronize: true,
-    entities: [Post, User]
+    migrations:[path.join(__dirname, './migrations/*')],
+    entities: [Post, User, Updoot]
   });
 
+  // await conn.runMigrations();
+
+  // await Post.delete({});
   const app = express();
 
   const RedisStore = connectRedis(session);
@@ -39,7 +47,7 @@ const main = async () => {
     session({
       name: COOKIE_NAME,
       store: new RedisStore({
-        client: redis,
+        client: redis as any,
         disableTouch: true,
       }),
       cookie: {
@@ -59,7 +67,10 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }) => ({ req, res, redis }),
+    context: ({ req, res }) => ({ 
+      req, res, redis,
+      userLoader: createUserLoader(),
+     }),
   });
 
   apolloServer.applyMiddleware({ 
