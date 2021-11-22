@@ -43,10 +43,25 @@ export class PostResolver {
   }
 
   @FieldResolver(() => User)
-  creator(@Root() post: Post,
-          @Ctx() { userLoader } : MyContext
-  ): Promise<User> {  
+  creator(@Root() post: Post, @Ctx() { userLoader }: MyContext): Promise<User> {
     return userLoader.load(post.creatorId);
+  }
+
+  @FieldResolver(() => User)
+  async voteStatus(
+    @Root() post: Post,
+    @Ctx() { updootLoader, req }: MyContext
+  ) {
+    if (!req.session.userId) {
+      return null;
+    }
+
+    const updoot = await updootLoader.load({
+      postId: post.id,
+      userId: req.session.userId,
+    });
+
+    return updoot ? updoot.value : null;
   }
 
   @Mutation(() => Boolean)
@@ -128,9 +143,10 @@ export class PostResolver {
     const posts = await getConnection().query(
       `
       select p.*,
-      ${req.session.userId 
-        ? '(select value from updoot where "userId" = $2 and "postId"=p.id) "voteStatus"'
-        : 'null as "voteStatus"'
+      ${
+        req.session.userId
+          ? '(select value from updoot where "userId" = $2 and "postId"=p.id) "voteStatus"'
+          : 'null as "voteStatus"'
       } 
       from post p 
       ${cursor ? `where p."createdAt" < $${cursorIdx}` : ""}
